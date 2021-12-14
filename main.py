@@ -8,7 +8,7 @@ def func_d(x):
 
 
 def func_i(x):
-    return 1 / (x * math.sqrt(1 - np.log(x)))
+    return 1 / (x * np.sqrt(1 - np.log(x)))
 
 
 # Левое разностное отношение
@@ -96,16 +96,14 @@ def middle_rectangles_method(a, b, n):
     return h * integral
 
 
-def graph_middle_rectangles_method(a, b, n):
-    h = (b - a) / n
+def graph_middle_rectangles_method(a, b, h):
     y = []
     x = []
-    integral = 0
-    for i in range(1, n + 1):
-        xi = a + h * (i - 0.5)
+    xi = a
+    while xi <= b:
         x.append(xi)
         y.append(func_i(xi))
-        integral += func_i(xi)
+        xi += h
     return x, y
 
 
@@ -136,6 +134,21 @@ def parabola_method(a, b, n):
     return h / 3 * integral
 
 
+def line_2_dotes(x1, x2, y1, y2, x):
+    return (x - x1) * (y2 - y1) / (x2 - x1) + y1
+
+
+def expand_list(in_arr, in_arg):
+    arr = []
+    arg = []
+    for i in range(len(in_arr) - 1):
+        x = np.arange(in_arg[i], in_arg[i + 1], (in_arg[i + 1] - in_arg[i]) / 100)
+        for j in x:
+            arg.append(j)
+            arr.append(line_2_dotes(in_arg[i], in_arg[i + 1], in_arr[i], in_arr[i + 1], j))
+    return arr, arg
+
+
 def graph_dif1(x, h):
     plt.grid()
     plt.title("Graphs for 1 derivative, h = " + str(h))
@@ -150,8 +163,6 @@ def graph_dif1(x, h):
     plt.plot(x, abs(der_func_d(x) - an_left_diff_r(x, h)))
     plt.plot(x, abs(der_func_d(x) - an_right_diff_r(x, h)))
     plt.grid()
-    plt.xscale('log')
-    plt.yscale('log')
     plt.show()
 
 
@@ -165,21 +176,31 @@ def graph_dif2(x, h):
     plt.title("Error graph")
     plt.plot(x, abs(der2_func_d(x) - an_second_der_approx_relation(x, h)))
     plt.grid()
-    plt.xscale('log')
-    plt.yscale('log')
     plt.show()
 
 
 def calc(power):
     n = 2
-    while (abs(middle_rectangles_method(begin, end, n) - middle_rectangles_method(begin, end, n - 1))) > 10 ** power:
+    while (abs(middle_rectangles_method(begin, end, n - 1) - middle_rectangles_method(begin, end, n))) > 10 ** power:
         n += 1
-
+    h = (end - begin) / n
     print('\n10 to the ' + str(power) + ' power: ' + str(n))
-    print("Result: " + str(round(middle_rectangles_method(begin, end, n), 8)))
-    x, y = graph_middle_rectangles_method(begin, end, n)
-    plt.plot(x, y, label="integral graph")
-    plt.hlines(10 ** power, 1, 2.75, color='r', label="graph 10 ^" + str(power))
+    print("Result: " + str(round(middle_rectangles_method(begin, end, n), abs(power) + 1)))
+    x, y = graph_middle_rectangles_method(begin, end, h)
+    err, arg = expand_list(y, x)
+    X = np.arange(begin, end, h / 100)
+
+    plt.scatter(x, y, label="dote")
+    plt.plot(X, func_i(X), label="original integral graph")
+    plt.plot(arg, err, label='broken line error graph')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+    for i in range(len(arg)):
+        err[i] = abs(func_i(arg[i]) - err[i])
+    plt.plot(arg, err, label='error graph')
+    plt.hlines(10 ** power, arg[0], arg[len(arg) - 1], color='r', label="graph 10 ^" + str(power), zorder=100)
     plt.legend()
     plt.grid()
     plt.show()
